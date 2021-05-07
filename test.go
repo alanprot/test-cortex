@@ -12,6 +12,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cortexproject/cortex/pkg/chunk/purger"
+	"github.com/cortexproject/cortex/pkg/querier"
+	"github.com/cortexproject/cortex/pkg/util/validation"
+	"github.com/go-kit/kit/log"
+	"github.com/prometheus/prometheus/promql"
+	"github.com/prometheus/prometheus/storage"
+
 	"github.com/prometheus/common/version"
 
 	"github.com/go-kit/kit/log/level"
@@ -164,7 +171,7 @@ func main() {
 	// Initialise seed for randomness usage.
 	rand.Seed(time.Now().UnixNano())
 
-	t, err := cortex.New(cfg)
+	t, err := cortex.New(cfg, testQuerierFactory)
 	util_log.CheckFatal("initializing cortex", err)
 
 	if printModules {
@@ -192,6 +199,11 @@ func main() {
 
 	runtime.KeepAlive(ballast)
 	util_log.CheckFatal("running cortex", err)
+}
+
+func testQuerierFactory(cfg querier.Config, limits *validation.Overrides, distributor querier.Distributor, stores []querier.QueryableWithFilter, tombstonesLoader *purger.TombstonesLoader, reg prometheus.Registerer, logger log.Logger) (storage.SampleAndChunkQueryable, *promql.Engine) {
+	level.Info(util_log.Logger).Log("msg", "Creating Querier alan")
+	return querier.New(cfg, limits, distributor, stores, tombstonesLoader, reg, logger)
 }
 
 // Parse -config.file and -config.expand-env option via separate flag set, to avoid polluting default one and calling flag.Parse on it twice.

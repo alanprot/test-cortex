@@ -320,10 +320,11 @@ type Cortex struct {
 	// Queryables that the querier should use to query the long
 	// term storage. It depends on the storage engine used.
 	StoreQueryables []querier.QueryableWithFilter
+	QuerierFactory querier.QuerierFactory
 }
 
 // New makes a new Cortex.
-func New(cfg Config) (*Cortex, error) {
+func New(cfg Config, querierFactory querier.QuerierFactory) (*Cortex, error) {
 	if cfg.PrintConfig {
 		if err := yaml.NewEncoder(os.Stdout).Encode(&cfg); err != nil {
 			fmt.Println("Error encoding config:", err)
@@ -351,8 +352,13 @@ func New(cfg Config) (*Cortex, error) {
 			"/schedulerpb.SchedulerForQuerier/NotifyQuerierShutdown",
 		})
 
+	if querierFactory == nil {
+		querierFactory = querier.New
+	}
+
 	cortex := &Cortex{
 		Cfg: cfg,
+		QuerierFactory: querierFactory,
 	}
 
 	cortex.setupThanosTracing()
